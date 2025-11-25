@@ -1,3 +1,245 @@
-<p>HelloWorld<p>
-<p>test1<p>
-<p>test2<p>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟偶像交互</title>
+    <!-- 引入 Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Noto+Sans+SC:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <!-- 引入 lamejs 用于 MP3 编码 -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"></script>
+    <!-- 引入 libvorbis.js 用于 OGG Vorbis 编码 -->
+    <script src="https://cdn.jsdelivr.net/npm/libvorbis.js@1.0.0/libvorbis.js"></script>
+    <!-- 引入 WebCodecs Polyfill 用于视频编码 -->
+    <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@3.3.1/build/mp4-muxer.min.js"></script>
+    <!-- 引入 JSZip 用于创建 ZIP 文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./mobile.css">
+</head>
+
+<body>
+
+    <div class="main">
+        <h1 class="main-title">虚拟偶像交互</h1>
+
+        <div class="main-layout">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <div class="control-card">
+                    <div class="control-item-group">
+                        <div class="control-item">
+                            <span>摄像头</span>
+                            <button id="camBtn" onclick="toggleCamera()" class="switch-btn">开启/关闭</button>
+                        </div>
+                        <div class="preview-box" id="camPreviewBox">
+                            <video id="camVideo" class="sidebar-preview" autoplay playsinline muted></video>
+                            <div class="preview-controls">
+                                <button id="recordVideoBtn" onclick="toggleVideoRecording()" class="record-btn"
+                                    style="display:none;">开始录制</button>
+                                <button id="downloadVideoBtn" onclick="downloadVideo()"
+                                    style="display:none;">下载视频</button>
+                            </div>
+                            <div style="padding:5px; text-align:center; color:#fff; font-size:0.7rem;">
+                                <span id="videoStatus"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-item-group">
+                        <div class="control-item">
+                            <span>屏幕截取</span>
+                            <button onclick="startScreenShare()" class="switch-btn">开启/关闭</button>
+                        </div>
+                        <div class="preview-box" id="screenPreviewBox">
+                            <video id="screenVideo" autoplay playsinline style="display:none;"></video>
+                            <canvas id="screenCanvas" class="sidebar-preview"></canvas>
+                            <div class="preview-controls">
+                                <button id="exportImagesBtn" onclick="exportScreenshotImages()"
+                                    style="display:none;">导出截图
+                                    (ZIP)</button>
+                            </div>
+                            <div style="padding:5px; text-align:center; color:#fff; font-size:0.7rem;">
+                                <span id="screenshotStatus">等待开启...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-item-group">
+                        <div class="control-item">
+                            <span>麦克风</span>
+                            <button id="micBtn" onclick="toggleMic()" class="switch-btn">开启/关闭</button>
+                        </div>
+                        <div class="preview-box" id="micPreviewBox" style="background:#fff; padding:5px;">
+                            <div id="micWrapper" class="mic-wrapper">
+                                <div class="mic-visualizer">
+                                    <div class="bar"></div>
+                                    <div class="bar"></div>
+                                    <div class="bar"></div>
+                                    <div class="bar"></div>
+                                    <div class="bar"></div>
+                                </div>
+                                <div id="micStatusText" style="font-size:0.7rem; color:#666; margin-top:5px;">未启动</div>
+                            </div>
+                            <audio id="micPlayback" controls
+                                style="width:100%; margin-top:5px; display:none; height:30px;"></audio>
+                            <div id="downloadSection" class="preview-controls"
+                                style="background:transparent; display:none; margin-top:5px;">
+                                <button onclick="downloadAudio('wav')">WAV</button>
+                                <button onclick="downloadAudio('mp3')">MP3</button>
+                                <button onclick="downloadAudio('ogg')">OGG</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="log-section">
+                    <div class="log-title-row">
+                        <div class="log-header">数据日志</div>
+                        <button onclick="exportToCSV()" class="switch-btn export-btn">导出CSV</button>
+                    </div>
+                    <div class="log-area" id="dataLog">Waiting for data...</div>
+                </div>
+
+                <div class="mouse-info">
+                    鼠标坐标: <span id="mousePos">x: 0 y: 0</span>
+                </div>
+            </div>
+
+            <!-- Right Content -->
+            <div class="content-area">
+                <!-- Character & Chat Area -->
+                <div class="interaction-stage">
+                    <div class="character-display">
+                        <video id="characterVideo" controls autoplay loop muted playsinline class="idol-video">
+                            <source
+                                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                                type="video/mp4">
+                            您的浏览器不支持视频播放
+                        </video>
+                        <div style="position:absolute; bottom:10px; left:10px;">
+                            <i class="fa fa-volume-up" style="font-size:24px; color:#333;"></i>
+                        </div>
+                    </div>
+                    <div class="chat-history">
+                        <div class="chat-title">对话记录</div>
+                        <div class="chat-container" id="chatContainer">
+                            <div class="chat-messages" id="chatMessages">
+                                <!-- AI消息示例 -->
+                                <div class="message ai-message">
+                                    <div class="message-content">
+                                        <div class="message-text">你好！我是虚拟偶像助手，很高兴与你对话！</div>
+                                        <div class="message-time">10:30</div>
+                                    </div>
+                                </div>
+
+                                <!-- 用户消息示例 -->
+                                <div class="message user-message">
+                                    <div class="message-content">
+                                        <div class="message-text">你好，今天天气怎么样？</div>
+                                        <div class="message-time">10:31</div>
+                                    </div>
+                                </div>
+
+                                <!-- AI回复示例 -->
+                                <div class="message ai-message">
+                                    <div class="message-content">
+                                        <div class="message-text">今天天气很不错呢！阳光明媚，适合出门走走哦～你有什么计划吗？</div>
+                                        <div class="message-time">10:32</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-section">
+                    <button id="voiceBtn" onclick="toggleVoiceInput()" class="voice-btn" title="点击录音">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor"
+                                d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                            <path fill="currentColor"
+                                d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        </svg>
+                    </button>
+                    <input type="text" id="userInput" placeholder="请输入..." class="chat-input">
+                    <button onclick="submitInput()" class="enter-btn">Enter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Charts -->
+        <div class="stats-panel">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="dot c-happy"></div> 高兴
+                </div>
+                <div class="legend-item">
+                    <div class="dot c-sad"></div> 悲伤
+                </div>
+                <div class="legend-item">
+                    <div class="dot c-angry"></div> 愤怒
+                </div>
+                <div class="legend-item">
+                    <div class="dot c-doubt"></div> 疑惑
+                </div>
+                <div class="legend-item">
+                    <div class="dot c-neutral"></div> 中立
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-label">视频</div>
+                <div class="chart-bar">
+                    <div class="bar-seg c-happy" style="width: 30%"></div>
+                    <div class="bar-seg c-sad" style="width: 25%"></div>
+                    <div class="bar-seg c-angry" style="width: 15%"></div>
+                    <div class="bar-seg c-doubt" style="width: 15%"></div>
+                    <div class="bar-seg c-neutral" style="width: 15%"></div>
+                </div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label">语音</div>
+                <div class="chart-bar">
+                    <div class="bar-seg c-happy" style="width: 35%"></div>
+                    <div class="bar-seg c-sad" style="width: 20%"></div>
+                    <div class="bar-seg c-angry" style="width: 10%"></div>
+                    <div class="bar-seg c-doubt" style="width: 20%"></div>
+                    <div class="bar-seg c-neutral" style="width: 15%"></div>
+                </div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-label">输入</div>
+                <div class="chart-bar">
+                    <div class="bar-seg c-happy" style="width: 40%"></div>
+                    <div class="bar-seg c-sad" style="width: 15%"></div>
+                    <div class="bar-seg c-angry" style="width: 15%"></div>
+                    <div class="bar-seg c-doubt" style="width: 25%"></div>
+                    <div class="bar-seg c-neutral" style="width: 5%"></div>
+                </div>
+            </div>
+
+            <div class="chart-scale">
+                <span>0%</span>
+                <span>20%</span>
+                <span>40%</span>
+                <span>60%</span>
+                <span>80%</span>
+                <span>100%</span>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="main.js"></script>
+
+
+</body>
+
+</html>
