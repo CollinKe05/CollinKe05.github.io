@@ -26,6 +26,26 @@ const mousePosDisplay = document.getElementById('mousePos');
 const canvas = document.getElementById('screenCanvas');
 const ctx = canvas.getContext('2d');
 
+let mouseTimer = null;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+// 监听鼠标移动
+document.addEventListener('mousemove', (e) => {
+  // 更新最后坐标
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+
+  // 清除之前的计时器
+  if (mouseTimer) {
+    clearTimeout(mouseTimer);
+  }
+
+  // 重新设置 10 秒后触发日志
+  mouseTimer = setTimeout(() => {
+    logEvent('MOUSE', `鼠标长时间停留 (x:${lastMouseX}, y:${lastMouseY})`);
+  }, 10000); // 10秒 = 10000毫秒
+});
 // 1. 启动媒体设备
 
 // 获取本地组合流（单例模式）
