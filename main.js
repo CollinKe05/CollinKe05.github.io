@@ -30,22 +30,11 @@ let mouseTimer = null;
 let lastMouseX = 0;
 let lastMouseY = 0;
 
-// 监听鼠标移动
-document.addEventListener('mousemove', (e) => {
-  // 更新最后坐标
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
+// 页面可见性和焦点状态（修正初始值）
+let isPageVisible = !document.hidden;   // ✅ 关键修复
+let isPageFocused = true; // focus 事件会更新，初始可设为 true
 
-  // 清除之前的计时器
-  if (mouseTimer) {
-    clearTimeout(mouseTimer);
-  }
 
-  // 重新设置 10 秒后触发日志
-  mouseTimer = setTimeout(() => {
-    logEvent('MOUSE', `鼠标长时间停留 (x:${lastMouseX}, y:${lastMouseY})`);
-  }, 10000); // 10秒 = 10000毫秒
-});
 // 1. 启动媒体设备
 
 // 获取本地组合流（单例模式）
@@ -339,7 +328,35 @@ function startScreenshotLoop(videoElement) {
 
 // 3. 鼠标移动监听
 document.addEventListener('mousemove', (e) => {
-    mousePosDisplay.innerHTML = `x: ${e.clientX} y: ${e.clientY}`;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+
+    if (mousePosDisplay) {
+        mousePosDisplay.textContent = `x: ${lastMouseX} y: ${lastMouseY}`;
+    }
+
+    // 👇 只有页面可见且聚焦时，才启动“长时间停留”检测
+    if (isPageVisible && isPageFocused) {
+        if (mouseTimer) clearTimeout(mouseTimer);
+        mouseTimer = setTimeout(() => {
+            logEvent('MOUSE', `鼠标长时间停留 (x:${lastMouseX}, y:${lastMouseY})`);
+        }, 10000);
+    } else {
+        // 页面不可见或失焦时，确保不计时
+        if (mouseTimer) clearTimeout(mouseTimer);
+    }
+});
+// 页面可见性 & 焦点状态跟踪（防止后台误判）
+document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    if (mouseTimer) clearTimeout(mouseTimer);
+});
+window.addEventListener('blur', () => {
+    isPageFocused = false;
+    if (mouseTimer) clearTimeout(mouseTimer);
+});
+window.addEventListener('focus', () => {
+    isPageFocused = true;
 });
 
 // 4. 键盘输入监听
