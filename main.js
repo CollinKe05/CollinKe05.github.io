@@ -1,3 +1,32 @@
+// 1. 修正剧本配置：匹配你的实际文件夹和文件名 [cite: 1, 2]
+const scriptData = [
+    {
+        userText: "（无意识地乱晃鼠标）",
+        aiText: "那个……虽然不想打扰你发呆，但是光标君已经在我的眼前转了五十圈啦。它是迷路了吗？",
+        videoUrl: "工导视频/工导 1.mp4", 
+        emotions: { happy: 10, sad: 20, angry: 0, doubt: 60, neutral: 10 }
+    },
+    {
+        userText: "哎？……抱歉，你能注意到这个？",
+        aiText: "我不光注意到了光标，还看到了你呀。你的眉头皱得好紧，黑眼圈也这么重……发生什么事了吗？",
+        videoUrl: "工导视频/工导 2.mp4",
+        emotions: { happy: 0, sad: 70, angry: 0, doubt: 10, neutral: 20 }
+    },
+    {
+        userText: "挂科了。明明这一个月我都在背书……也许我真的没天赋吧，所有的努力都像个笑话。",
+        aiText: "反对。努力才不是笑话！我看得到，你现在的表情充满了‘不甘心’。这份‘不甘心’就是你努力过的最好证明。",
+        videoUrl: "工导视频/工导 3.mp4",
+        emotions: { happy: 10, sad: 40, angry: 10, doubt: 0, neutral: 40 }
+    },
+    {
+        userText: "你说得对。既然存进去了，就不能让它白费。",
+        aiText: "去吧，我就在这里，等着听你的好消息。",
+        videoUrl: "工导视频/工导 4.mp4",
+        emotions: { happy: 60, sad: 0, angry: 0, doubt: 0, neutral: 40 }
+    }
+];
+
+let currentStep = 0; // 剧本进度指针
 // JavaScript 部分 - 逻辑实现
 
 // 存储采集的数据
@@ -26,16 +55,15 @@ const mousePosDisplay = document.getElementById('mousePos');
 const canvas = document.getElementById('screenCanvas');
 const ctx = canvas.getContext('2d');
 
-let mouseTimer = null;
+// ===== 补充缺失的鼠标相关变量 =====
 let lastMouseX = 0;
 let lastMouseY = 0;
+let mouseTimer = null;
 
 // 页面可见性和焦点状态（修正初始值）
 let isPageVisible = !document.hidden;   // ✅ 关键修复
 let isPageFocused = true; // focus 事件会更新，初始可设为 true
 
-
-// 1. 启动媒体设备
 
 // 获取本地组合流（单例模式）
 function getLocalStream() {
@@ -358,7 +386,6 @@ window.addEventListener('blur', () => {
 window.addEventListener('focus', () => {
     isPageFocused = true;
 });
-
 // 4. 键盘输入监听
 document.addEventListener('keydown', (e) => {
     const keyInfo = `Key: ${e.key} | Code: ${e.code}`;
@@ -434,61 +461,65 @@ function exportToCSV() {
     link.click();
     document.body.removeChild(link);
 }
+function renderChatMessage(role, text) {
+    const chatMessages = document.getElementById('chatMessages');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${role}-message`;
+    msgDiv.innerHTML = `
+        <div class="message-content">
+            <div class="message-text">${text}</div>
+            <div class="message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+    `;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+function updateEmotionCharts(emotions) {
+    const bars = document.querySelectorAll('.chart-bar');
+    const htmlContent = `
+        <div class="bar-seg c-happy" style="width: ${emotions.happy}%"></div>
+        <div class="bar-seg c-sad" style="width: ${emotions.sad}%"></div>
+        <div class="bar-seg c-angry" style="width: ${emotions.angry}%"></div>
+        <div class="bar-seg c-doubt" style="width: ${emotions.doubt}%"></div>
+        <div class="bar-seg c-neutral" style="width: ${emotions.neutral}%"></div>
+    `;
+    bars.forEach(bar => {
+        bar.innerHTML = htmlContent;
+    });
+}
+
+function updateIdolVideo(url) {
+    const video = document.getElementById('characterVideo');
+    if (video) {
+        video.src = url;
+        video.load();
+        video.play().catch(e => console.log("等待用户交互后播放"));
+    }
+}
 
 // 7. 提交输入信息
-function submitInput() {
-    const userInput = document.getElementById('userInput');
-    const inputText = userInput.value.trim();
+// 确保 currentStep 定义在函数外部
+// let currentStep = 0; // 已经在文件开头定义了
 
-    if (!inputText) {
-        // alert('请输入内容后再提交');
+function submitInput() {
+    if (currentStep >= scriptData.length) {
+        logEvent("系统", "剧本演示结束");
         return;
     }
 
-    // 7.1 显示到对话框
-    const chatMessages = document.getElementById('chatMessages');
-    const now = new Date();
-    const timeString = now.getHours().toString().padStart(2, '0') + ':' +
-        now.getMinutes().toString().padStart(2, '0');
+    const step = scriptData[currentStep];
+    currentStep++; 
 
-    // 创建用户消息元素
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message user-message';
+    renderChatMessage('user', step.userText);
+    document.getElementById('userInput').value = "";
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-
-    const textDiv = document.createElement('div');
-    textDiv.className = 'message-text';
-    textDiv.innerText = inputText;
-
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'message-time';
-    timeDiv.innerText = timeString;
-
-    contentDiv.appendChild(textDiv);
-    contentDiv.appendChild(timeDiv);
-    messageDiv.appendChild(contentDiv);
-
-    chatMessages.appendChild(messageDiv);
-
-    // 滚动到底部
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    // 组装JSON数据
-    const jsonData = {
-        timestamp: now.toISOString(),
-        userInput: inputText,
-        mousePosition: mousePosDisplay.innerText,
-        dataRecordsCount: dataRecords.length,
-        sessionId: Date.now().toString()
-    };
-
-    // 记录提交事件
-    logEvent("用户输入", `提交内容: ${inputText}`);
-
-    // 清空输入框
-    userInput.value = '';
+    logEvent("分析", "监测到用户行为模式变化...");
+    logEvent("LLM", "正在生成情感化回复...");
+    setTimeout(() => {
+        renderChatMessage('ai', step.aiText);
+        updateIdolVideo(step.videoUrl); // 切换视频
+        updateEmotionCharts(step.emotions); // 切换图表
+    }, 1000);
 }
 
 // 添加回车键发送支持
