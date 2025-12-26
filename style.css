@@ -442,18 +442,19 @@
      color: var(--primary-text);
  }
 
- .chart-bar {
-     height: 100%;
-     display: flex;
-     border-radius: 5px;
-     overflow: hidden;
-     position: relative;
- }
+.chart-bar {
+    display: flex;
+    height: 12px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 5px;
+}
 
- .bar-seg {
-     height: 100%;
-     transition: width 1s ease;
- }
+.bar-seg {
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 增加平滑动画 */
+}
 
  .chart-scale {
      display: flex;
@@ -610,3 +611,23 @@
  .hidden-logic {
      display: none;
  }
+
+ /* 情感颜色定义 */
+.bar-seg {
+    height: 100%;
+    transition: width 0.5s ease; /* 增加平滑过渡效果 */
+}
+.c-happy  { background-color: #4caf50 !important; } 
+.c-sad    { background-color: #2196f3 !important; } 
+.c-angry  { background-color: #f44336 !important; } 
+.c-doubt  { background-color: #ff9800 !important; } 
+.c-neutral { background-color: #9e9e9e !important; }
+
+/* 确保容器有高度 */
+.chart-bar {
+    display: flex;
+    height: 12px;
+    background: #eeeeee;
+    border-radius: 6px;
+    overflow: hidden;
+}
