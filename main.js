@@ -15,7 +15,7 @@ const scriptData = [
     },
     {
         userText: "挂科了。明明这一个月我都在背书……也许我真的没天赋吧，所有的努力都像个笑话。",
-        aiText::"反对。努力才不是笑话。",
+        aiText:"反对。努力才不是笑话。",
         videoUrl: "工导视频/工导 3.mp4",
         emotions: { happy: 10, sad: 40, angry: 10, doubt: 0, neutral: 40 }
     },
