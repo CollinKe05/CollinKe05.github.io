@@ -8,20 +8,28 @@ const scriptData = [
     },
     {
         userText: "哎？……抱歉，你能注意到这个？",
-        aiText: "我不光注意到了光标，还看到了你呀。你的眉头皱得好紧，黑眼圈也这么重……发生什么事了吗？",
+        aiText: "我不光注意到了光标，还看到了你呀。你的眉头皱得好紧，黑眼圈也这么重……看起来像是刚刚打完一场必输的仗。发生什么事了吗？",
+        userText: "必输的仗吗……形容得真贴切。",
         videoUrl: "工导视频/工导 2.mp4",
         emotions: { happy: 0, sad: 70, angry: 0, doubt: 10, neutral: 20 }
     },
     {
         userText: "挂科了。明明这一个月我都在背书……也许我真的没天赋吧，所有的努力都像个笑话。",
-        aiText: "反对。努力才不是笑话！我看得到，你现在的表情充满了‘不甘心’。这份‘不甘心’就是你努力过的最好证明。",
+        aiText::"反对。努力才不是笑话。",
         videoUrl: "工导视频/工导 3.mp4",
         emotions: { happy: 10, sad: 40, angry: 10, doubt: 0, neutral: 40 }
     },
     {
+        userText: "……什么？",
+        aiText: "如果真的像你说的那样‘没天赋’或者‘不在乎’，那你现在应该觉得轻松才对呀。可是我看得到，你现在的表情充满了‘不甘心’。",
+        videoUrl: "工导视频/工导 4.mp4",
+        emotions: { happy: 60, sad: 0, angry: 0, doubt: 0, neutral: 40 }
+    },
+    {
+        userText: "不甘心……是因为努力过吗？",
         userText: "你说得对。既然存进去了，就不能让它白费。",
         aiText: "去吧，我就在这里，等着听你的好消息。",
-        videoUrl: "工导视频/工导 4.mp4",
+        videoUrl: "工导视频/工导 5.mp4",
         emotions: { happy: 60, sad: 0, angry: 0, doubt: 0, neutral: 40 }
     }
 ];
