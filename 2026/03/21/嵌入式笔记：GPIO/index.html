@@ -1,0 +1,165 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Learning to use Hexo to build my blog.维修中..."><title>嵌入式笔记：GPIO | CollinKe05's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" mask="" sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+toggle.addEventListener('click', () => {
+localStorage.dark = !(html.dataset.dark == 'true');
+html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.1"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">嵌入式笔记：GPIO</h1><a id="logo" href="/.">CollinKe05's Blog</a><p class="description">Naohdog</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> Home</i></a><a href="/archives/"><i class="fa fa-archive"> Archive</i></a><a href="/about/"><i class="fa fa-user"> About</i></a><a href="/links/"><i class="fa links"> Links</i></a><a href="/guestbook/"><i class="fa guestbook"> Guestbook</i></a><a href="/atom.xml"><i class="fa fa-rss"> RSS</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">嵌入式笔记：GPIO</h1><div class="post-meta">2026-03-21</div><div class="post-content"><h1 id="GPIO"><a href="#GPIO" class="headerlink" title="GPIO"></a>GPIO</h1><h2 id="1-1PIN设备"><a href="#1-1PIN设备" class="headerlink" title="1.1PIN设备"></a>1.1PIN设备</h2><p>单片机通过引脚（Pin）与外部连接。引脚可以输出高低电平来控制外部器件，也可以读取外部器件输入的电平状态。相当于是一种抽象概念，没有涉及到具体电路（把各种引脚形态封装好了的一种概念，只管调用）。这里的所有操作都基于操作系统（RT-Thread），要操作真正的物理引脚也可以绕过操作系统直接写引脚的寄存器（不赘述）。</p>
+<h3 id="PIN输出"><a href="#PIN输出" class="headerlink" title="PIN输出"></a>PIN输出</h3><p>PIN输出可以获取引脚编号、设置引脚为输出模式（写操作）可以写高&#x2F;低电平。当调用 PIN 设备的输出接口写1或0时，总线会将指令传送到GPIO外设的寄存器，改变内部电路状态，最终让物理引脚输出3.3V（高电平）或0V（低电平）。</p>
+<h4 id="使用方式："><a href="#使用方式：" class="headerlink" title="使用方式："></a>使用方式：</h4><p>Step 1:获取引脚编号。</p>
+<p>Step 2:使用 rt_pin_mode() 将引脚配置为输出模式。</p>
+<p>Step 3:使用 rt_pin_write() 输出高低电平来控制外设。</p>
+<h3 id="PIN输入"><a href="#PIN输入" class="headerlink" title="PIN输入"></a>PIN输入</h3><p>外部电路改变了引脚的电压，这个电压被GPIO内部的输入数据寄存器捕获。当调用读取接口时，CPU就会去读取那个寄存器的地址，从而让软件“感知”到外部的状态。</p>
+<h4 id="使用方式：-1"><a href="#使用方式：-1" class="headerlink" title="使用方式："></a>使用方式：</h4><p>轮询法（主动查，耗时，且切换频繁，不太实用）：</p>
+<p>Step 1: 获取引脚编号。</p>
+<p>Step 2: 配置为输入模式（通常需要结合上下拉）。</p>
+<p>Step 3: 在 while(1) 循环中不断使用 rt_pin_read() 去读取电平状态。</p>
+<p>中断法（被动等待通知，效率最高）：</p>
+<p>Step 1: 获取引脚编号。</p>
+<p>Step 2: 配置为输入模式。</p>
+<p>Step 3: 编写一个中断回调函数。</p>
+<p>Step 4: 使用 rt_pin_attach_irq() 将引脚、触发条件（如电平跳变）与回调函数绑定。</p>
+<p>Step 5: 使用 rt_pin_irq_enable() 开启中断。</p>
+<h3 id="核心操作"><a href="#核心操作" class="headerlink" title="核心操作"></a>核心操作</h3><p><img src="/"></p>
+<h3 id="内存映射-I-O"><a href="#内存映射-I-O" class="headerlink" title="内存映射 I&#x2F;O"></a>内存映射 I&#x2F;O</h3><p>(Memory-Mapped I&#x2F;O)</p>
+<p>在单片机中，特定的内存地址并非连接真正的内存，而是映射到了外设（如 GPIO）的寄存器上。当程序向某个指定的寄存器地址写入数据时，芯片内部的总线会将这个请求传送到对应的 GPIO 外设，外设内部的电路状态随之改变，最终导致物理引脚的电平发生翻转。</p>
+<h2 id="1-2GPIO原理与结构"><a href="#1-2GPIO原理与结构" class="headerlink" title="1.2GPIO原理与结构"></a>1.2GPIO原理与结构</h2><p>GPIO是一种真实的物理引脚，与pin的区别就在于它是具体的，而非笼统的概念。每种单片机的GPIO可能会有不同的电路设计，但此处不深入细究（不然就写太多了）。</p>
+<p>GPIO (General Purpose Input Output)，即通用输入输出，可以负责接收&#x2F;产生数字电平（）GPIO IN&#x2F;GPIO OUT。常规的两种电平有两种，高电平1、低电平0。GPIO在输入状态（IN）接收电平、接受控制，而在输出状态（OUT）产生电平、输出控制。</p>
+<h3 id="GPIO内部结构："><a href="#GPIO内部结构：" class="headerlink" title="GPIO内部结构："></a>GPIO内部结构：</h3><p><img src="/"></p>
+<h3 id="输入-输出数据寄存器"><a href="#输入-输出数据寄存器" class="headerlink" title="输入&#x2F;输出数据寄存器"></a>输入&#x2F;输出数据寄存器</h3><p><strong>输入数据寄存器</strong> <strong>(IDR - Input Data Register)</strong> <strong>：</strong></p>
+<p>记录当前物理引脚上的真实电压状态。</p>
+<p>是一个只读寄存器。硬件电路会每隔一个时钟周期自动去采样一次物理引脚的电压。如果是 3.3V，硬件就把IDR寄存器对应的比特位置为1；如果是0V，就置为0。</p>
+<p><strong>输出数据寄存器</strong> <strong>(ODR - Output Data Register)</strong> <strong>：</strong></p>
+<p>决定单片机“期望”物理引脚输出什么电平。</p>
+<p>是一个可读可写的寄存器。当你的程序向 ODR 寄存器的某一位写入 1 时，内部硬件就会驱动 P-MOS 管导通，尝试向外输出 3.3V 高电平。</p>
+<p><strong>ODR</strong> <strong>的弱点：</strong> 如果你想让 PA0 输出高电平，但不想影响 PA1-PA15，你不能直接给 ODR 赋值。CPU 必须先读出 ODR 当前的值，把第0位改成1，然后再整体写回 ODR。这个“读-改-写”的过程需要执行3条底层汇编指令，在这个过程中如果被中断打断，就会造成严重的数据混乱。</p>
+<p> <strong>BSRR</strong>  <strong>：</strong> 正是因为 ODR 存在上述缺陷，STM32 硬件工程师专门设计了BSRR（端口置位&#x2F;复位寄存器）。向 BSRR 写入数据是单指令的硬件级操作。BSRR 收到指令后，会在底层直接去修改 ODR，从而极大地提升了 IO 翻转的速度和安全性。</p>
+<p>在绝大多数情况下，期望和现实是一致的（ODR 写 1，IDR 读出来也是 1）。但在开漏输出（OLED I2C 通信）场景下，就会出现期望与现实的分歧：当你向 ODR 写 1 时（开漏模式下等于松手不输出），如果总线上的其他设备把电平强行拉低了，此时你去读 IDR，读回来的现实就是 0。单片机正是通过对比 ODR 和 IDR 的差异，实现了高级的通信协议仲裁。</p>
+<h3 id="模式详解"><a href="#模式详解" class="headerlink" title="模式详解"></a>模式详解</h3><p><strong>输出模式：</strong></p>
+<p><strong>推挽输出</strong> <strong>(PIN_MODE_OUTPUT):</strong> 输出高电平时，连通 VCC（强推）；输出低电平时，连通 GND（强挽）。最常用的输出模式,驱动能力强。</p>
+<p><strong>开漏输出</strong> <strong>(PIN_MODE_OUTPUT_OD):</strong> 输出低电平时连通 GND；但要求输出高电平时，引脚处于“悬空&#x2F;高阻”状态。它自己无法输出高电平，必须依靠外部电路接一个“上拉电阻”才能把电平拉高。用于实现“线与”逻辑，最典型的应用就是 **I2C ** <strong>通信总线</strong> 。</p>
+<p> <strong>输入模式</strong> <strong>:</strong></p>
+<p><strong>浮空输入</strong> <strong>(PIN_MODE_INPUT):</strong> 内部上下拉电阻均断开。引脚电平完全由外部接入的信号决定。如果外部没有任何连接，引脚电平会像天线一样捕捉环境干扰，处于不确定的随机跳变状态。通常用于标准的外部数字信号输入，或者作为 ADC（模数转换）的模拟电压采集通道。</p>
+<p><strong>上拉输入</strong> <strong>(PIN_MODE_INPUT_PULLUP)</strong> :闭合内部连接到 VCC 的上拉电阻。在外部没有信号输入时，引脚默认在 <strong>高电平</strong> 。</p>
+<p>**应用：**按键接地的场景。比如你的 <strong>KEY2 (PA1)</strong> ，按下是低电平，松开时为了防止电平乱跳，必须配置为上拉输入，让它松开时稳定保持高电平。</p>
+<p><strong>下拉输入</strong> <strong>(PIN_MODE_INPUT_PULLDOWN)</strong> :闭合内部连接到 GND 的下拉电阻。外部无信号时，引脚默认被“稳住”在 <strong>低电平</strong> 。</p>
+<p>应用：按键接 VCC 的场景。比如 <strong>KEY1(PA0)</strong> ，按下是高电平，需要配置软件下拉电阻，让它松开时稳定在低电平。</p>
+<p> <strong>中断触发模式</strong> <strong>:</strong></p>
+<p><strong>下降沿触发</strong>**(PIN_IRQ_MODE_FALLING)：**捕获高电平瞬间变为低电平的瞬间。适用于检测上拉输入的按键按下的瞬间。</p>
+<p><strong>上升沿触发</strong> <strong>(PIN_IRQ_MODE_RISING)</strong> ：捕获低电平瞬间变为高电平的瞬间。适用于检测下拉输入的按键按下的瞬间。</p>
+<p><strong>双边沿触发</strong> **(PIN_IRQ_MODE_RISING_FALLING)：**高电平低电平互换瞬间都会触发。</p>
+<h2 id="1-3中断功能"><a href="#1-3中断功能" class="headerlink" title="1.3中断功能"></a>1.3中断功能</h2><h3 id="回调函数的理解与外部中断的实现"><a href="#回调函数的理解与外部中断的实现" class="headerlink" title="回调函数的理解与外部中断的实现"></a>回调函数的理解与外部中断的实现</h3><p>中断 (Interrupt)：电平跳变，主程序立刻暂停记录位置，处理突发事件。处理完后，再从记录的位置继续运行。</p>
+<p>回调函数 (Callback Function)：当中断触发时，CPU就会立刻精准地执行回调函数内容。执行完毕后，CPU返回。</p>
+<h3 id="中断流程："><a href="#中断流程：" class="headerlink" title="中断流程："></a>中断流程：</h3><p>1.准备阶段（配置引脚模式）</p>
+<p>2.约定阶段（注册回调）</p>
+<p>注册一个回调函数，使用 rt_pin_attach_irq 函数绑定回调函数</p>
+<p>3.运行阶段（主函数执行）</p>
+<p>4.突发阶段（按键按下）</p>
+<p>5.报警阶段（触发中断）</p>
+<p>底层的硬件逻辑检测到了这个跳变，立刻向 CPU 发出中断请求。CPU 收到信号后就会停下手中主函数的工作，并记住现在执行到了哪一行代码。</p>
+<p>6.执行阶段（运行回调函数）：</p>
+<p>CPU 顺着绑定好的回调函数，直接跳到回调函数里去执行逻辑</p>
+<p>7.回归阶段（继续主函数）：</p>
+<p>回调函数运行完毕，CPU回到主函数中断处继续执行。</p>
+<p>中断的优先级高于普通的主线程（如 main 函数里的 while(1)）。当 CPU 停下主函数去执行中断回调函数时，如果回调函数执行时间过长，主函数就会一直被卡住。</p>
+<p>中断回调函数必须“快进快出”。绝对不能在回调函数中写入死循环，也严禁调用任何会引起阻塞的延时函数（如 rt_thread_mdelay()）。如果按键触发后需要执行耗时操作，正确的做法是在回调函数中只改变一个全局标志位（Flag），然后立刻退出中断，由主循环不断检查该标志位并执行相应的耗时逻辑。</p>
+<h2 id="1-4消抖逻辑"><a href="#1-4消抖逻辑" class="headerlink" title="1.4消抖逻辑"></a>1.4消抖逻辑</h2><p>**软件消抖逻辑：**在检测到第一次电平跳变后，程序不能立刻认定按键被按下，必须延时一小段时间（通常为 10ms~20ms）让物理电平稳定下来，然后再读取一次引脚电平。如果依然是有效电平，才确认为真正的按下动作。</p>
+<h2 id="1-5怎么匹配不同的外设该用什么模式"><a href="#1-5怎么匹配不同的外设该用什么模式" class="headerlink" title="1.5怎么匹配不同的外设该用什么模式"></a>1.5怎么匹配不同的外设该用什么模式</h2><h3 id="一、-输入模式怎么选？（看“空闲状态”）"><a href="#一、-输入模式怎么选？（看“空闲状态”）" class="headerlink" title="一、 输入模式怎么选？（看“空闲状态”）"></a>一、 输入模式怎么选？（看“空闲状态”）</h3><p>输入引脚就像一个在风中摇摆的风筝。如果外部没有明确给它通电（比如按键没按下），它就会处于一种“测不准”的浮空状态，随便一个静电就能让它在 0 和 1 之间疯狂跳动。所以，我们需要用内部的“上下拉电阻”把它稳住。</p>
+<p><strong>判断口诀：按键按下是什么电平，空闲时就要用电阻拉到相反的电平。</strong></p>
+<ul>
+<li><strong>场景 1：按键一头接 GND（按下变低电平，Active-Low）</strong><ul>
+<li><strong>分析：</strong> 既然按下才是 0，那不按的时候必须稳稳地保持在 1。</li>
+<li><strong>选择：</strong>  <strong>上拉输入 (<code>PIN_MODE_INPUT_PULLUP</code>)</strong> 。</li>
+<li><strong>小车实战：</strong> 你的 <code>KEY2</code> (PA1) 按下是低电平，所以必须配上拉。</li>
+</ul>
+</li>
+<li><strong>场景 2：按键一头接 VCC（按下变高电平，Active-High）</strong><ul>
+<li><strong>分析：</strong> 既然按下才是 1，那不按的时候必须稳稳地保持在 0。</li>
+<li><strong>选择：</strong>  <strong>下拉输入 (<code>PIN_MODE_INPUT_PULLDOWN</code>)</strong> 。</li>
+<li><strong>小车实战：</strong> 你的 <code>KEY1</code> (PA0) 按下是高电平，所以必须配下拉。</li>
+</ul>
+</li>
+<li><strong>场景 3：外部传感器自己输出强信号</strong><ul>
+<li><strong>分析：</strong> 比如超声波模块的回响引脚（Echo），传感器内部已经帮你把高低电平安排得明明白白了，不需要单片机多管闲事。</li>
+<li><strong>选择：</strong>  <strong>浮空输入 (<code>PIN_MODE_INPUT</code>)</strong> 。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="二、-输出模式怎么选？（看“驱动需求与通信协议”）"><a href="#二、-输出模式怎么选？（看“驱动需求与通信协议”）" class="headerlink" title="二、 输出模式怎么选？（看“驱动需求与通信协议”）"></a>二、 输出模式怎么选？（看“驱动需求与通信协议”）</h3><p>输出引脚是我们去控制别人，我们需要决定是“强硬地推过去”还是“留有余地”。</p>
+<p><strong>判断口诀：单向控制用推挽，双向通信（总线）用开漏。</strong></p>
+<ul>
+<li><strong>场景 1：直接控制元器件（亮灯、响喇叭、转电机）</strong><ul>
+<li><strong>分析：</strong> 需要单片机干脆利落地输出 3.3V (强推) 或 0V (强挽) 来驱动器件。</li>
+<li><strong>选择：</strong>  <strong>推挽输出 (<code>PIN_MODE_OUTPUT</code>)</strong> 。</li>
+<li><strong>小车实战：</strong> 你的 4 个 LED 车灯 (PD8-PD11，低电平点亮) 和蜂鸣器 (PA5，低电平响)，统统无脑选择推挽输出。</li>
+</ul>
+</li>
+<li><strong>场景 2：多设备共享一根数据线（典型如 I2C 协议）</strong><ul>
+<li><strong>分析：</strong> 如果用推挽，设备 A 强行输出高电平（3.3V），设备 B 强行输出低电平（0V），这俩线连在一起，主板直接就短路烧毁了。因此只能用内部没有上拉能力的“开漏”。开漏模式下，引脚只能拉低，要拉高必须靠外部电路共同的“上拉电阻”。这样大家谁也不和谁打架，谁想发信号就把线拉低，不发信号就松手。</li>
+<li><strong>选择：</strong>  <strong>开漏输出 (<code>PIN_MODE_OUTPUT_OD</code>)</strong> 。</li>
+<li><strong>小车实战：</strong> 你的 OLED 屏幕连接的 <code>SCL</code> (PB6) 和 <code>SDA</code> (PB7)，在后续编写软件模拟 I2C 时序时，为了安全和符合协议规范，强烈建议配置为开漏输出（搭配外部或软件上拉）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<table>
+<thead>
+<tr>
+<th><strong>你的外设</strong></th>
+<th><strong>引脚</strong></th>
+<th><strong>硬件特性</strong></th>
+<th><strong>应配模式 (RT-Thread API)</strong></th>
+<th><strong>理由</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>KEY1 (核心板按键)</strong></td>
+<td>PA0</td>
+<td>按下变高电平</td>
+<td><code>PIN_MODE_INPUT_PULLDOWN</code></td>
+<td>松开时需要下拉到低电平</td>
+</tr>
+<tr>
+<td><strong>KEY2 (底板按键)</strong></td>
+<td>PA1</td>
+<td>按下变低电平</td>
+<td><code>PIN_MODE_INPUT_PULLUP</code></td>
+<td>松开时需要上拉到高电平</td>
+</tr>
+<tr>
+<td><strong>LED 车灯 (4个)</strong></td>
+<td>PD8-PD11</td>
+<td>低电平点亮</td>
+<td><code>PIN_MODE_OUTPUT</code></td>
+<td>需要强驱动力</td>
+</tr>
+<tr>
+<td><strong>蜂鸣器 &#x2F; 喇叭</strong></td>
+<td>PA5</td>
+<td>低电平响</td>
+<td><code>PIN_MODE_OUTPUT</code></td>
+<td>需要强驱动力</td>
+</tr>
+<tr>
+<td><strong>OLED (I2C 模拟)</strong></td>
+<td>PB6, PB7</td>
+<td>I2C 通信总线</td>
+<td><code>PIN_MODE_OUTPUT_OD</code></td>
+<td>防止总线电平冲突短路</td>
+</tr>
+</tbody></table>
+<h2 id="1-6输入模式与输出模式的继承关系"><a href="#1-6输入模式与输出模式的继承关系" class="headerlink" title="1.6输入模式与输出模式的继承关系"></a>1.6输入模式与输出模式的继承关系</h2><h3 id="1-永不关闭的“输入监听器”-IDR-寄存器"><a href="#1-永不关闭的“输入监听器”-IDR-寄存器" class="headerlink" title="1. 永不关闭的“输入监听器” (IDR 寄存器)"></a>1. 永不关闭的“输入监听器” (IDR 寄存器)</h3><p>在 STM32 的硬件设计中，引脚的“输入数据寄存器 (IDR)”通路是<strong>始终处于激活状态</strong>的（除非你把引脚配置成了模拟输入模式去测电压）。<br>这意味着， <strong>即使你把引脚配置成了“推挽输出”或“开漏输出”，单片机依然可以随时通过读取 IDR 寄存器，获取当前物理引脚上的真实电平状态</strong> 。</p>
+<h3 id="2-输出与输入的本质区别（物理开关的开与关）"><a href="#2-输出与输入的本质区别（物理开关的开与关）" class="headerlink" title="2. 输出与输入的本质区别（物理开关的开与关）"></a>2. 输出与输入的本质区别（物理开关的开与关）</h3><ul>
+<li><strong>配置为“输入模式”时：</strong> 芯片内部负责向外输出电流的 MOS 管电路被 <strong>完全断开（高阻态）</strong> 。此时，引脚只听不说，是一个纯粹的侦听器，电平完全由外部决定。</li>
+<li><strong>配置为“输出模式”时：</strong><br>芯片内部的 MOS 管电路被 <strong>接通</strong> ，开始努力把引脚强行拉高（3.3V）或拉低（0V）。<strong>但与此同时，那个侦听器（输入通路）依然在工作！</strong> 它可以随时“监听”自己发出去的电平到底有没有成功体现在物理引脚上。</li>
+</ul>
+<h3 id="3-这个“输出带输入”的特性有什么大用？"><a href="#3-这个“输出带输入”的特性有什么大用？" class="headerlink" title="3. 这个“输出带输入”的特性有什么大用？"></a>3. 这个“输出带输入”的特性有什么大用？</h3><p>你可能会问，既然是我自己输出的电平，我心里还能没数吗？为什么还要读回来？<br>在某些绝妙的场景下，你输出的电平，还真不一定等于引脚上的真实电平：</p>
+<ul>
+<li><strong>场景一：I2C 通信的精髓（开漏输出模式）</strong><br>这是最经典的案例。前面我们提到，OLED 的 I2C 通信必须用 <strong>开漏输出</strong> 。在开漏模式下，当你输出 <code>1</code> 时，单片机内部其实是松手的（不输出 3.3V），引脚电平靠外部电阻拉高。<br>此时，如果总线上的另一个设备（比如某个传感器）强行把线拉低到了 <code>0</code>， <strong>你的输出寄存器里写的是 <code>1</code>，但物理引脚上却是 <code>0</code></strong> 。<br>这时候，那个始终在线的“输入监听器”就立大功了！单片机可以在输出 <code>1</code> 的同时去读取输入，如果读回来发现是 <code>0</code>，说明“总线被别人占用了”。这就是 I2C 协议中“时钟同步”和“多主机仲裁”的硬件基石。</li>
+<li><strong>场景二：硬件故障检测</strong><br>在推挽输出模式下，你强行输出 <code>1</code>（3.3V），结果一读输入寄存器，发现居然是 <code>0</code>。这就说明出大问题了——引脚很可能在外部对地短路了，电压被硬生生拉平了。通过这种方式，软件就能察觉到外部物理世界的硬件故障。</li>
+</ul>
+</div><div class="tags"><ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" rel="tag">嵌入式</a></li></ul></div><div class="post-nav"><a class="next" href="/2026/02/13/VScode-%E5%9F%BA%E7%A1%80%E7%8E%AF%E5%A2%83%E8%AE%BE%E7%BD%AE/">VScode 基础环境设置</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="https://CollinKe05.github.io"/></form></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="About"><img class="nofancybox" src="/img/avatar.jpg"/></a><p>Don't carry the world upon your shoulders.</p><a class="info-icon" href="https://github.com/CollinKe05" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a><a class="info-icon" href="https://twitter.com/CollinKe01" title="Twitter" target="_blank" style="margin-inline:5px"> <i class="fa fa-twitter-square" style="margin-inline:5px"></i></a><a class="info-icon" href="yongxike05@gmail.com" title="Email" target="_blank" style="margin-inline:5px"> <i class="fa fa-envelope-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Categories</i></div></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"><a href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F/" style="font-size: 15px;">嵌入式</a> <a href="/tags/env/" style="font-size: 15px;">env</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Recent</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/03/21/%E5%B5%8C%E5%85%A5%E5%BC%8F%E7%AC%94%E8%AE%B0%EF%BC%9AGPIO/">嵌入式笔记：GPIO</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/02/13/VScode-%E5%9F%BA%E7%A1%80%E7%8E%AF%E5%A2%83%E8%AE%BE%E7%BD%AE/">VScode 基础环境设置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/02/05/My-First-Test-Post/">My-First-Test-Post</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/02/05/hello-world/">Hello World</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Links</i></div><ul></ul><a href="http://www.CollinKe05.github.io/" title="CollinKe05's Blog" target="_blank">CollinKe05's Blog</a><ul></ul><a href="https://manual.xn--xkrsa0ti6rf4cf98d.com/" title="华南理工大学生存手册" target="_blank">华南理工大学生存手册</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">CollinKe05's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="Copy Successed!"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>
