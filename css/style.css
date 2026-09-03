@@ -219,7 +219,7 @@ div {
 #sidebar .widget .author-info {
   text-align: center;
 }
-#sidebar .widget .author-info a.info-avatar img {
+#sidebar .widget .author-info .info-avatar img {
   border-radius: 50%;
   padding: 4px;
   width: 96px;
